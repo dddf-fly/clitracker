@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLI Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/json-formatter-js/dist/json-formatter.min.css">
+  <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <span class="brand-glyph" aria-hidden="true">[&lt;]</span>
+      <strong class="brand"><span>CLI</span> Tracker</strong>
+      <span class="signal" id="connection-state" title="Connecting"></span>
+    </div>
+    <div class="grow stats" id="meta">
+      <span class="muted">Connecting...</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="json-mode" class="btn" type="button">JSON</button>
+      <button id="expand-all" class="btn" type="button">Expand</button>
+      <button id="collapse-all" class="btn" type="button">Collapse</button>
+      <button id="clear" class="btn" type="button">Clear</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="left">
+      <div class="left-head">
+        <span>Requests</span>
+        <span class="left-total mono" id="requests-total">0</span>
+      </div>
+      <div id="list"></div>
+    </aside>
+    <main class="right" id="details">
+      <div class="empty">Waiting for requests...</div>
+    </main>
+    <aside class="settings-panel" id="settings-panel">
+      <div class="settings-head">
+        <div class="settings-meta">
+          <div class="settings-title">Settings</div>
+          <div class="settings-subtitle">Detached modules for capture and debug</div>
+        </div>
+        <div class="settings-actions">
+          <button id="collapse-settings" class="icon-btn collapse-toggle" type="button" aria-label="Collapse settings">&lt;</button>
+        </div>
+      </div>
+      <details class="settings-group">
+        <summary>
+          <span>Capture Module</span>
+          <span class="status" id="save-status">Not loaded</span>
+        </summary>
+        <div class="settings-group-body">
+          <p>Manage capture rules and runtime information without occupying the main workspace.</p>
+          <div class="runtime-grid">
+            <div class="runtime-pill">
+              <span class="runtime-label">UI</span>
+              <span class="mono" id="runtime-ui">-</span>
+            </div>
+            <div class="runtime-pill">
+              <span class="runtime-label">Proxy</span>
+              <span class="mono" id="runtime-proxy">-</span>
+            </div>
+          </div>
+          <h3>Allowed Domains</h3>
+          <p>One domain per line. Requests are captured only when the host matches this allowlist.</p>
+          <textarea id="allowed-hosts" spellcheck="false"></textarea>
+          <h3 class="spaced">Tracked Paths</h3>
+          <p>One path fragment per line. Matching <span class="mono">POST</span> requests on an allowed host are treated as tracked API calls.</p>
+          <textarea id="tracked-paths" class="paths-textarea" spellcheck="false"></textarea>
+          <label class="toggle">
+            <input type="checkbox" id="catch-all-mode">
+            <span>Catch-all mode for any <span class="mono">POST</span> to allowed hosts</span>
+          </label>
+          <div class="runtime-lines">
+            <span class="mono" id="config-path"></span>
+            <span class="mono" id="ca-path"></span>
+          </div>
+          <div class="toolbar">
+            <button class="btn" id="save-settings" type="button">Save</button>
+            <button class="btn" id="refresh-debug" type="button">Refresh</button>
+          </div>
+        </div>
+      </details>
+      <details class="settings-group">
+        <summary>
+          <span>Debug Module</span>
+          <span class="mono">Realtime diagnostics</span>
+        </summary>
+        <div class="settings-group-body">
+          <div class="section-head">
+            <p id="diagnostics-hint">Loading diagnostics...</p>
+            <button class="btn btn-small" id="clear-debug" type="button">Clear</button>
+          </div>
+          <label class="toggle toggle-compact">
+            <input type="checkbox" id="live-diagnostics">
+            <span>Live diagnostics</span>
+          </label>
+          <div class="diagnostic-tabs" id="diagnostic-tabs">
+            <button class="diag-tab active" data-tab="hosts" type="button">Domains <span class="diag-count" id="count-hosts">0</span></button>
+            <button class="diag-tab" data-tab="paths" type="button">Paths <span class="diag-count" id="count-paths">0</span></button>
+            <button class="diag-tab" data-tab="targets" type="button">Targets <span class="diag-count" id="count-targets">0</span></button>
+          </div>
+          <div class="list-box" id="diagnostic-list">
+            <div class="empty">No diagnostics yet.</div>
+          </div>
+        </div>
+      </details>
+    </aside>
+  </div>
+  <footer class="site-footer">
+    <span>CLI Tracker</span>
+    <span class="footer-sep">|</span>
+    <span>Local traffic inspector</span>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/json-formatter-js/dist/json-formatter.umd.js" defer></script>
+  <script src="/static/js/index.js" defer></script>
+</body>
+</html>

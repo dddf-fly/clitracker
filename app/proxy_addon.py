@@ -226,6 +226,10 @@ def reconstruct_openai_sse_response(events: list[dict]) -> dict | None:
             if isinstance(reasoning_text, str) and reasoning_text:
                 reasoning_parts.append(reasoning_text)
 
+            reasoning_content = delta.get("reasoning_content")
+            if isinstance(reasoning_content, str) and reasoning_content:
+                reasoning_parts.append(reasoning_content)
+
             opaque = delta.get("reasoning_opaque")
             if isinstance(opaque, str) and opaque:
                 reasoning_opaque = opaque

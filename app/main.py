@@ -96,9 +96,9 @@ def bootstrap_snapshot() -> dict[str, object]:
 
 def _shell_exports(shell: str) -> list[str]:
     ca_path = default_ca_path()
-    exports = [f'{name} = "{PROXY_URL}"' for name in PROXY_ENV_VARS]
-    exports.extend(f'{name} = "{ca_path}"' for name in CA_ENV_VARS)
-    exports.extend(f'{name} = "{NO_PROXY}"' for name in NO_PROXY_ENV_VARS)
+    exports = [f'{name}="{PROXY_URL}"' for name in PROXY_ENV_VARS]
+    exports.extend(f'{name}="{ca_path}"' for name in CA_ENV_VARS)
+    exports.extend(f'{name}="{NO_PROXY}"' for name in NO_PROXY_ENV_VARS)
     if shell == "powershell":
         return [f"$env:{entry}" for entry in exports]
     return [f"export {entry}" for entry in exports]

@@ -197,6 +197,7 @@ def reconstruct_openai_sse_response(events: list[dict]) -> dict | None:
     response_id: str | None = None
     model: str | None = None
     usage: dict = {}
+    tool_calls: dict[int, dict] = {}
 
     for chunk in chunks:
         response_id = chunk.get("id") or response_id
@@ -234,6 +235,26 @@ def reconstruct_openai_sse_response(events: list[dict]) -> dict | None:
             if isinstance(opaque, str) and opaque:
                 reasoning_opaque = opaque
 
+            raw_tool_calls = delta.get("tool_calls")
+            if isinstance(raw_tool_calls, list):
+                for tc in raw_tool_calls:
+                    if not isinstance(tc, dict):
+                        continue
+                    index = tc.get("index")
+                    if not isinstance(index, int):
+                        continue
+                    if index not in tool_calls:
+                        tool_calls[index] = {"id": "", "name": "", "arguments": ""}
+                    entry = tool_calls[index]
+                    if isinstance(tc.get("id"), str):
+                        entry["id"] = tc["id"]
+                    function_data = tc.get("function", {})
+                    if isinstance(function_data, dict):
+                        if isinstance(function_data.get("name"), str):
+                            entry["name"] = function_data["name"]
+                        if isinstance(function_data.get("arguments"), str):
+                            entry["arguments"] += function_data["arguments"]
+
     content_blocks: list[dict] = []
     if reasoning_parts or reasoning_opaque:
         thinking_block: dict[str, object] = {
@@ -245,6 +266,24 @@ def reconstruct_openai_sse_response(events: list[dict]) -> dict | None:
         content_blocks.append(thinking_block)
     if text_parts:
         content_blocks.append({"type": "text", "text": "".join(text_parts)})
+
+    for index in sorted(tool_calls):
+        tc = tool_calls[index]
+        json_input: dict = {}
+        raw_json = tc.get("arguments", "")
+        if raw_json:
+            try:
+                parsed = json.loads(raw_json)
+                if isinstance(parsed, dict):
+                    json_input = parsed
+            except json.JSONDecodeError:
+                json_input = {}
+        content_blocks.append({
+            "type": "tool_use",
+            "id": tc.get("id", ""),
+            "name": tc.get("name", ""),
+            "input": json_input,
+        })
 
     if not response_id and not content_blocks and not usage:
         return None

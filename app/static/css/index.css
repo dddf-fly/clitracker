@@ -59,6 +59,8 @@ details[open] .summary-preview{display:none}
 .summary-actions{margin-left:auto;display:inline-flex;align-items:center}
 .summary-json-btn{background:#0f1419;border:1px solid #2a323b;color:#9aa3ad;border-radius:6px;padding:2px 8px;font:11px Consolas,monospace;cursor:pointer}
 .summary-json-btn:hover,.summary-json-btn.active{background:#132631;border-color:#00b7e6;color:#dff9ff}
+.summary-save-btn{background:#0f1419;border:1px solid #2a323b;color:#9aa3ad;border-radius:6px;padding:2px 8px;font:11px Consolas,monospace;cursor:pointer;margin-left:4px}
+.summary-save-btn:hover{background:#1c2818;border-color:#4c9e3f;color:#b8f0a8}
 .json-content-view.hidden{display:none}
 .json-raw-view{margin-top:12px;padding:10px 12px;border:1px solid #2a323b;border-radius:8px;background:#101317;overflow:auto}
 .json-raw-view.hidden{display:none}

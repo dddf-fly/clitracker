@@ -85,6 +85,7 @@
   let socketState = "Connecting";
   let jsonBlockSeq = 0;
   const rawJsonStore = new Map();
+  const saveContentStore = new Map();
   let settingsData = {
     rejected_hosts: [],
     rejected_paths: [],
@@ -294,17 +295,23 @@
       });
     });
   };
-  const renderRawJsonView = (value) => {
+  const renderSaveButton = (content) => {
+    const saveId = `save-block-${++jsonBlockSeq}`;
+    saveContentStore.set(saveId, content);
+    return `<button class="summary-save-btn" type="button" data-save-target="${saveId}">Save</button>`;
+  };
+  const renderRawJsonView = (value, extraActions = "") => {
     const viewId = `json-block-${++jsonBlockSeq}`;
     rawJsonStore.set(viewId, value);
     return {
-      button: `<span class="summary-actions"><button class="summary-json-btn" type="button" data-json-target="${viewId}" aria-pressed="false">JSON</button></span>`,
+      button: `<span class="summary-actions"><button class="summary-json-btn" type="button" data-json-target="${viewId}" aria-pressed="false">JSON</button>${extraActions}</span>`,
       panel: `<div class="json-raw-view hidden" id="${viewId}" data-json-id="${viewId}"></div>`,
     };
   };
   const renderDetailsBox = (klass, title, body, options = {}) => {
-    const { preview = "", tag = "", open = false, rawValue } = options;
-    const rawJson = rawValue === undefined ? null : renderRawJsonView(rawValue);
+    const { preview = "", tag = "", open = false, rawValue, saveValue } = options;
+    const extraActions = saveValue !== undefined ? renderSaveButton(saveValue) : "";
+    const rawJson = rawValue === undefined ? null : renderRawJsonView(rawValue, extraActions);
     return `<details class="${klass}${rawJson ? " json-enabled" : ""}"${open ? " open" : ""}><summary>${renderSummaryMain(title, preview)}${tag}${rawJson ? rawJson.button : ""}</summary><div class="body">${rawJson ? `<div class="json-content-view">${body}</div>${rawJson.panel}` : body}</div></details>`;
   };
   const renderToolSchema = (title, value) => `<details class="tool-schema"><summary>${esc(title)}</summary><div class="tool-schema-body">${renderPre(value)}</div></details>`;
@@ -364,20 +371,21 @@
     const body = getReqBody(item);
     const response = getRespBody(item);
     const sections = [];
-    sections.push(renderDetailsBox("box panel", "Captured Record", renderPre(item), { open: true, rawValue: item }));
+    sections.push(renderDetailsBox("box panel", "Captured Record", renderPre(item), { open: true, rawValue: item, saveValue: item }));
     if (body !== null && body !== undefined) {
-      sections.push(renderDetailsBox("box panel", "Request JSON", renderPre(body), { rawValue: body }));
+      sections.push(renderDetailsBox("box panel", "Request JSON", renderPre(body), { rawValue: body, saveValue: body }));
     }
     if (response !== null && response !== undefined) {
-      sections.push(renderDetailsBox("box panel", "Response JSON", renderPre(response), { rawValue: response }));
+      sections.push(renderDetailsBox("box panel", "Response JSON", renderPre(response), { rawValue: response, saveValue: response }));
     }
     if (getRawResponse(item)) {
-      sections.push(renderDetailsBox("box panel", "Raw Response Text", renderPre(getRawResponse(item)), { rawValue: getRawResponse(item) }));
+      sections.push(renderDetailsBox("box panel", "Raw Response Text", renderPre(getRawResponse(item)), { rawValue: getRawResponse(item), saveValue: getRawResponse(item) }));
     }
     if (getSseEvents(item).length) {
       sections.push(renderDetailsBox("box panel", label("streaming_events", "Streaming Events"), renderPre(getSseEvents(item)), {
         preview: `${getSseEvents(item).length} ${label("events", "events")}`,
         rawValue: getSseEvents(item),
+        saveValue: getSseEvents(item),
       }));
     }
     return sections.join("");
@@ -847,7 +855,30 @@
   document.getElementById("expand-all").addEventListener("click", () => setAll(true));
   document.getElementById("collapse-all").addEventListener("click", () => setAll(false));
   attachInlineCopyHandlers(settingsPanelEl);
-  detailsEl.addEventListener("click", (event) => {
+  detailsEl.addEventListener("click", async (event) => {
+    const saveBtn = event.target.closest(".summary-save-btn");
+    if (saveBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const targetId = saveBtn.dataset.saveTarget;
+      if (!targetId) return;
+      const content = saveContentStore.get(targetId);
+      if (content === undefined) return;
+      saveBtn.textContent = "Saving...";
+      try {
+        const response = await fetch("/api/save-json", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        });
+        const result = await response.json();
+        saveBtn.textContent = result?.success ? "Saved" : "Error";
+      } catch {
+        saveBtn.textContent = "Error";
+      }
+      setTimeout(() => { saveBtn.textContent = "Save"; }, 2000);
+      return;
+    }
     const button = event.target.closest(".summary-json-btn");
     if (!button) {
       return;

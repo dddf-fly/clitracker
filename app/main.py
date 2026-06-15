@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
@@ -58,6 +60,9 @@ class SettingsUpdate(BaseModel):
     tracked_paths: list[str]
     clear_rejected_hosts: bool = False
     catch_all_mode: bool | None = None
+
+class SaveJsonRequest(BaseModel):
+    content: object
 
 def default_ca_path() -> str:
     return str(Path.home() / ".mitmproxy" / "mitmproxy-ca-cert.pem")
@@ -210,6 +215,19 @@ async def update_settings(payload: SettingsUpdate) -> JSONResponse:
         state.clear_diagnostics()
     return json_payload(settings_snapshot())
 
+
+@app.post("/api/save-json")
+async def save_json(payload: SaveJsonRequest) -> JSONResponse:
+    now = datetime.now()
+    base_name = now.strftime("%m-%d-%H-%M-%S")
+    filename = f"{base_name}.json"
+    counter = 0
+    while os.path.exists(filename):
+        counter += 1
+        filename = f"{base_name}-{counter}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(payload.content, f, ensure_ascii=False, indent=2)
+    return JSONResponse({"success": True, "path": filename})
 
 @app.post("/api/rejected/clear")
 async def clear_rejected() -> JSONResponse:

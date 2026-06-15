@@ -5,7 +5,8 @@
     "api.z.ai",
     "api.githubcopilot.com",
     "integrate.api.nvidia.com",
-    "opencode.ai"
+    "opencode.ai",
+    "api.deepseek.com"
   ],
   "tracked_paths": [
     "/v1/messages",

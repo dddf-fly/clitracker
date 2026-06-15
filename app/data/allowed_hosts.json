@@ -4,7 +4,8 @@
     "api.claude.ai",
     "api.z.ai",
     "api.githubcopilot.com",
-    "integrate.api.nvidia.com"
+    "integrate.api.nvidia.com",
+    "opencode.ai"
   ],
   "tracked_paths": [
     "/v1/messages",

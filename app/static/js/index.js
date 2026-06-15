@@ -242,6 +242,14 @@
     if (!message) {
       return [];
     }
+    if (message.role === "tool") {
+      return [{
+        type: "tool_result",
+        tool_use_id: message.tool_call_id || "",
+        content: message.content,
+        is_error: message.is_error || false,
+      }];
+    }
     if (typeof message.content === "string" && !message.tool_calls) {
       return [{ type: "text", text: message.content }];
     }
@@ -255,7 +263,7 @@
     for (const block of list || []) {
       if (block.type === "text" && block.text) return block.text.replace(/\s+/g, " ").trim();
       if (block.type === "tool_use") return `Tool: ${block.name || "unknown"}`;
-      if (block.type === "tool_result" && typeof block.content === "string") return block.content.replace(/\s+/g, " ").trim();
+      if (block.type === "tool_result") return block.tool_use_id || "tool result";
       if (block.type === "thinking" && block.thinking) return block.thinking.replace(/\s+/g, " ").trim();
     }
     return "";
@@ -450,9 +458,10 @@
     if (block.type === "tool_result") {
       const klass = block.is_error ? "tool-result-title error" : "tool-result-title";
       const tag = block.is_error ? `<span class="inline-tag">[error]</span>` : "";
+      const idTag = block.tool_use_id ? `<span class="inline-tag">#${esc(block.tool_use_id)}</span>` : "";
       const body = `${block.tool_use_id ? renderKv("tool_use_id", renderPill(block.tool_use_id)) : ""}${renderKv("content", renderPre(asText(block.content)))}${block.is_error ? renderKv("is_error", renderPill(true)) : ""}`;
       const rawJson = renderRawJsonView(block);
-      return `<details class="subbox content-block json-enabled"><summary><span class="${klass}">${esc(label("tool_result", "TOOL RESULT"))}</span>${tag}${rawJson.button}</summary><div class="subbody"><div class="json-content-view">${body}</div>${rawJson.panel}</div></details>`;
+      return `<details class="subbox content-block json-enabled"><summary><span class="${klass}">${esc(label("tool_result", "TOOL RESULT"))}</span>${tag}${idTag}${rawJson.button}</summary><div class="subbody"><div class="json-content-view">${body}</div>${rawJson.panel}</div></details>`;
     }
     if (block.type === "image") {
       const source = imageSrc(block);

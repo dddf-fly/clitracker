@@ -210,14 +210,45 @@
     return next;
   };
 
+  const normalizeToolCalls = (msg) => {
+    const result = [];
+    if (msg.reasoning_content) {
+      result.push({ type: "thinking", thinking: msg.reasoning_content });
+    }
+    if (typeof msg.content === "string" && msg.content) {
+      result.push({ type: "text", text: msg.content });
+    }
+    if (Array.isArray(msg.tool_calls)) {
+      for (const tc of msg.tool_calls) {
+        const fn = tc.function || tc;
+        let input = {};
+        if (typeof fn.arguments === "string") {
+          try { input = JSON.parse(fn.arguments); } catch { input = {}; }
+        } else if (fn.arguments && typeof fn.arguments === "object") {
+          input = fn.arguments;
+        }
+        result.push({
+          type: "tool_use",
+          id: tc.id || "",
+          name: fn.name || "",
+          input: typeof input === "object" && input !== null ? input : {},
+        });
+      }
+    }
+    return result;
+  };
+
   const blocks = (message) => {
     if (!message) {
       return [];
     }
-    if (typeof message.content === "string") {
+    if (typeof message.content === "string" && !message.tool_calls) {
       return [{ type: "text", text: message.content }];
     }
-    return Array.isArray(message.content) ? message.content : [];
+    if (Array.isArray(message.content)) {
+      return message.content;
+    }
+    return normalizeToolCalls(message);
   };
 
   const previewText = (list) => {
@@ -767,7 +798,10 @@
           rawValue: response,
         });
       } else {
-        html += renderMsg("assistant", Array.isArray(response.content) ? response.content : [], response.stop_reason || "", response);
+        const openaiMsg = response.choices?.[0]?.message;
+        const contentBlocks = openaiMsg ? normalizeToolCalls(openaiMsg) : (Array.isArray(response.content) ? response.content : []);
+        const stopReason = openaiMsg ? (response.choices?.[0]?.finish_reason || "") : (response.stop_reason || "");
+        html += renderMsg("assistant", contentBlocks, stopReason, response);
       }
     } else if (getRawResponse(item)) {
       html += renderDetailsBox("box assistant", label("assistant", "ASSISTANT"), renderPre(getRawResponse(item)), {
